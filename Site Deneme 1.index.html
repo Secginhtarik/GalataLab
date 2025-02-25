@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Speech Translation</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f0f0f0;
+        }
+
+        .container {
+            background-color: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+        }
+
+        .language-selector {
+            margin: 20px 0;
+            display: flex;
+            gap: 10px;
+        }
+
+        button {
+            padding: 10px 20px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background-color: #45a049;
+        }
+
+        .text-box {
+            width: 100%;
+            height: 100px;
+            margin: 10px 0;
+            padding: 10px;
+        }
+
+        .status {
+            margin-top: 20px;
+            color: #666;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Konuşma Çevirici</h1>
+        
+        <div class="language-selector">
+            <select id="language">
+                <option value="en-tr">İngilizce → Türkçe</option>
+                <option value="tr-en">Türkçe → İngilizce</option>
+            </select>
+            <button onclick="startRecognition()">🎤 Mikrofonu Kullan</button>
+        </div>
+
+        <div>
+            <textarea id="inputText" class="text-box" placeholder="Metin buraya yazılacak..."></textarea>
+            <button onclick="translateText()">Çevir</button>
+            <textarea id="outputText" class="text-box" readonly></textarea>
+        </div>
+
+        <div>
+            <button onclick="speakInput()">Orijinal Metni Oku</button>
+            <button onclick="speakOutput()">Çeviriyi Oku</button>
+        </div>
+
+        <div class="status" id="status"></div>
+    </div>
+
+    <script>
+        let recognition;
+        let isRecognizing = false;
+
+        // Speech Recognition başlatma
+        if ('webkitSpeechRecognition' in window) {
+            recognition = new webkitSpeechRecognition();
+            recognition.continuous = false;
+            recognition.interimResults = false;
+
+            recognition.onstart = () => {
+                isRecognizing = true;
+                updateStatus("Dinliyorum...");
+            };
+
+            recognition.onresult = (event) => {
+                const transcript = event.results[0][0].transcript;
+                document.getElementById('inputText').value = transcript;
+            };
+
+            recognition.onerror = (event) => {
+                updateStatus("Hata oluştu: " + event.error);
+            };
+
+            recognition.onend = () => {
+                isRecognizing = false;
+                updateStatus("");
+            };
+        }
+
+        function startRecognition() {
+            if (isRecognizing) {
+                recognition.stop();
+                return;
+            }
+            
+            const lang = document.getElementById('language').value.split('-')[0];
+            recognition.lang = lang === 'tr' ? 'tr-TR' : 'en-US';
+            recognition.start();
+        }
+
+        async function translateText() {
+            const inputText = document.getElementById('inputText').value;
+            const [sourceLang, targetLang] = document.getElementById('language').value.split('-');
+            
+            try {
+                const response = await fetch('/translate', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        text: inputText,
+                        src: sourceLang,
+                        dest: targetLang
+                    })
+                });
+
+                const data = await response.json();
+                document.getElementById('outputText').value = data.translatedText;
+            } catch (error) {
+                console.error('Çeviri hatası:', error);
+                updateStatus("Çeviri sırasında hata oluştu");
+            }
+        }
+
+        function speakInput() {
+            const text = document.getElementById('inputText').value;
+            speak(text, document.getElementById('language').value.split('-')[0]);
+        }
+
+        function speakOutput() {
+            const text = document.getElementById('outputText').value;
+            const lang = document.getElementById('language').value.split('-')[1];
+            speak(text, lang);
+        }
+
+        function speak(text, lang) {
+            const utterance = new SpeechSynthesisUtterance(text);
+            utterance.lang = lang === 'tr' ? 'tr-TR' : 'en-US';
+            window.speechSynthesis.speak(utterance);
+        }
+
+        function updateStatus(message) {
+            document.getElementById('status').textContent = message;
+        }
+    </script>
+</body>
+</html>
