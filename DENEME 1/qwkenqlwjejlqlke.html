@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <title>Button ve Başlık İlişkisi</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 20px;
+            padding: 50px;
+        }
+        
+        .button-group {
+            display: flex;
+            gap: 15px;
+        }
+        
+        button {
+            padding: 12px 24px;
+            font-size: 16px;
+            cursor: pointer;
+            border-radius: 2px;
+            border: 2px solid #4CAF50;
+            background-color: #ffffff;
+            transition: all 0.3s;
+        }
+        
+        button:hover {
+            background-color: #4CAF50;
+            color: white;
+        }
+        
+        h1#main-heading {
+            color: #2c3e50;
+            border-bottom: 3px solid #4CAF50;
+            padding-bottom: 10px;
+        }
+    </style>
+</head>
+<body>
+    <h1 id="main-heading">BUTON 1 BAŞLIĞI</h1>
+    
+    <div class="button-group">
+        <button onclick="changeHeading('Button 1 Tıklandı!')">BUTON 1</button>
+        <button onclick="changeHeading(document.getElementById('main-heading').innerHTML)">BUTON 2</button>
+    </div>
+
+    <script>
+        function changeHeading(text) {
+            document.getElementById('main-heading').innerHTML = text;
+        }
+    </script>
+</body>
+</html>
