@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Speech Recognition Chatbot</title>
+</head>
+<body>
+    <h1>Speech Recognition Chatbot</h1>
+    <button onclick="startListening()">Start Listening</button>
+    <p id="output"></p>
+    <script>
+        const output = document.getElementById("output");
+        
+        function speak(text) {
+            const speech = new SpeechSynthesisUtterance(text);
+            speechSynthesis.speak(speech);
+        }
+        
+        function startListening() {
+            const recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
+            recognition.lang = "en-US";
+            recognition.start();
+            
+            recognition.onresult = function(event) {
+                const userInput = event.results[0][0].transcript.toLowerCase();
+                output.innerText = "You said: " + userInput;
+                
+                if (userInput.includes("how are you")) {
+                    speak("I'm doing great, thank you for asking!");
+                } else if (userInput.includes("goodbye")) {
+                    speak("Goodbye! Have a great day!");
+                } else {
+                    speak("Sorry, I didn't quite get that.");
+                }
+            };
+            
+            recognition.onerror = function() {
+                speak("Sorry, I could not understand your speech.");
+            };
+        }
+    </script>
+</body>
+</html>

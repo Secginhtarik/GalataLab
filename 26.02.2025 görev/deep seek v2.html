@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Simple Voice Assistant</title>
+    <style>
+        body {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            font-family: Arial, sans-serif;
+        }
+        #assistant {
+            margin-top: 50px;
+            padding: 20px;
+            border: 1px solid #ccc;
+            border-radius: 10px;
+            max-width: 400px;
+            text-align: center;
+        }
+        button {
+            padding: 10px 20px;
+            font-size: 16px;
+            cursor: pointer;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            margin: 10px;
+        }
+        #status {
+            color: #666;
+            margin: 10px;
+            min-height: 40px;
+        }
+    </style>
+</head>
+<body>
+    <div id="assistant">
+        <h2>Voice Assistant</h2>
+        <button onclick="startListening()">
+            <img src="https://img.icons8.com/ios/50/000000/microphone.png" alt="Microphone">
+        </button>
+        <div id="status"></div>
+    </div>
+
+    <script>
+        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+        const recognition = new SpeechRecognition();
+        const synthesis = window.speechSynthesis;
+        
+        recognition.lang = 'en-US';
+
+        // Sayfa yüklendiğinde çalışacak kod
+        window.onload = function() {
+            document.getElementById('status').textContent = "Hello, how can I assist you today?";
+            speak("Hello, how can I assist you today?");
+        };
+
+        function speak(text) {
+            const utterance = new SpeechSynthesisUtterance(text);
+            synthesis.speak(utterance);
+        }
+
+        function startListening() {
+            document.getElementById('status').textContent = 'Listening...';
+            recognition.start();
+        }
+
+        recognition.onresult = function(event) {
+            const transcript = event.results[0][0].transcript.toLowerCase();
+            document.getElementById('status').textContent = `You said: ${transcript}`;
+            
+            if(transcript.includes('how are you')) {
+                speak("I'm doing great, thank you for asking!");
+            } else if(transcript.includes('goodbye')) {
+                speak("Goodbye! Have a great day!");
+            } else {
+                speak("Sorry, I didn't quite get that.");
+            }
+        }
+
+        recognition.onerror = function(event) {
+            document.getElementById('status').textContent = 'Error recognizing speech';
+        }
+
+        recognition.onend = function() {
+            document.getElementById('status').textContent = 'Click microphone to start again';
+        }
+    </script>
+</body>
+</html>

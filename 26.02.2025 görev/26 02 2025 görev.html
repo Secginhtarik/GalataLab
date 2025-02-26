@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Voice Assistant</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            padding: 50px;
+        }
+        button {
+            padding: 10px 20px;
+            font-size: 18px;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <h1>Voice Assistant</h1>
+    <button onclick="startListening()">Start Listening</button>
+    <p id="output">Say something...</p>
+    
+    <script>
+        const output = document.getElementById("output");
+        const recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
+        recognition.lang = "en-US";
+        recognition.interimResults = false;
+        
+        function startListening() {
+            recognition.start();
+        }
+
+        recognition.onresult = function(event) {
+            const transcript = event.results[0][0].transcript.toLowerCase();
+            output.textContent = "You said: " + transcript;
+            respond(transcript);
+        };
+
+        function respond(text) {
+            let response = "Sorry, I didn't quite get that.";
+            if (text.includes("how are you")) {
+                response = "I'm doing great, thank you for asking!";
+            } else if (text.includes("goodbye")) {
+                response = "Goodbye! Have a great day!";
+            } else {
+                response = "Please speak again.";
+            }
+            speak(response);
+        }
+
+        function speak(text) {
+            const utterance = new SpeechSynthesisUtterance(text);
+            speechSynthesis.speak(utterance);
+        }
+    </script>
+</body>
+</html>
