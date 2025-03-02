@@ -16,59 +16,54 @@
   <body>
     <div class="container">
       <header>
-        <h1>Konuşma Tanıma</h1>
-        <p>İngilizce konuşun, söyledikleriniz ekrana yazılsın!</p>
+        <h1>Konuşma Pratiği</h1>
+        <p>İngilizce konuşun!</p>
       </header>
       <main>
         <div class="buttons">
-          <button id="start-btn">🎤 Konuşmaya Başla</button>
-          <button id="stop-btn" disabled>⏹️ Konuşmayı Durdur</button>
+          <button id="start-btn">Konuşmaya Başla</button>
+          <button id="stop-btn" disabled>Konuşmayı Durdur</button>
         </div>
         <div id="result" class="hidden">
           <div class="result-box">
             <p><strong>Söylenen:</strong> <span id="recognized-text"></span></p>
+            <p><strong>Yanıt:</strong> <span id="response-text"></span></p>
           </div>
         </div>
-      </main>
-    </div>
+        
 
     <script>
-      let isListening = false; // Dinleme durumunu takip etmek için
-      let mediaRecorder; // Mikrofon kaydı için
+      let isListening = false;
 
       document
         .getElementById("start-btn")
         .addEventListener("click", function () {
           if (!isListening) {
-            console.log("Dinleme başladı!");
             isListening = true;
             document.getElementById("start-btn").disabled = true;
             document.getElementById("stop-btn").disabled = false;
 
             fetch("/recognize", {
               method: "POST",
-              headers: {
-                "Content-Type": "application/json",
-              },
+              headers: { "Content-Type": "application/json" },
             })
-              .then((response) => {
-                if (!response.ok) {
-                  throw new Error("Ağ hatası: " + response.statusText);
-                }
-                return response.json();
-              })
+              .then((response) => response.json())
               .then((data) => {
                 if (data.error) {
-                  alert("Hata: " + data.error);
+                  document.getElementById("recognized-text").innerText =
+                    "Hata: " + data.error;
+                  document.getElementById("response-text").innerText = "";
                 } else {
                   document.getElementById("recognized-text").innerText =
                     data.text;
-                  document.getElementById("result").classList.remove("hidden");
+                  document.getElementById("response-text").innerText =
+                    data.response;
                 }
               })
               .catch((error) => {
                 console.error("Hata:", error);
-                alert("Bir hata oluştu: " + error.message);
+                document.getElementById("recognized-text").innerText =
+                  "Bağlantı hatası!";
               })
               .finally(() => {
                 isListening = false;
@@ -86,11 +81,6 @@
             isListening = false;
             document.getElementById("start-btn").disabled = false;
             document.getElementById("stop-btn").disabled = true;
-
-            // Mikrofon kaydını durdur (eğer kullanılıyorsa)
-            if (mediaRecorder && mediaRecorder.state === "recording") {
-              mediaRecorder.stop();
-            }
           }
         });
     </script>
