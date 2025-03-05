@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="tr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Konuşma Tanıma</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}" />
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet" />
+  </head>
+  <body>
+    <div class="container">
+      <header>
+        <h1>Konuşma Tanıma</h1>
+        <p>İngilizce konuşun, söyledikleriniz ekrana yazılsın!</p>
+      </header>
+      <main>
+        <div class="buttons">
+          <button id="start-btn">🎤 Konuşmaya Başla</button>
+          <button id="stop-btn" disabled>⏹️ Konuşmayı Durdur</button>
+        </div>
+        <div id="result" class="hidden">
+          <div class="result-box">
+            <p><strong>Söylenen:</strong> <span id="recognized-text"></span></p>
+          </div>
+        </div>
+      </main>
+    </div>
+
+    <script>
+      let mediaRecorder;
+      let audioChunks = [];
+      
+      async function startRecording() {
+        try {
+          const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+          mediaRecorder = new MediaRecorder(stream);
+          
+          mediaRecorder.ondataavailable = (event) => {
+            if (event.data.size > 0) {
+              audioChunks.push(event.data);
+            }
+          };
+          
+          mediaRecorder.onstop = async () => {
+            const audioBlob = new Blob(audioChunks, { type: 'audio/wav' });
+            const formData = new FormData();
+            formData.append('audio', audioBlob, 'recording.wav');
+            
+            try {
+              const response = await fetch('/recognize', {
+                method: 'POST',
+                body: formData
+              });
+              
+              const data = await response.json();
+              if (data.error) {
+                alert("Hata: " + data.error);
+              } else {
+                document.getElementById("recognized-text").textContent = data.text;
+                document.getElementById("result").classList.remove("hidden");
+              }
+            } catch (error) {
+              console.error('Hata:', error);
+              alert("Bir hata oluştu: " + error.message);
+            }
+            
+            audioChunks = [];
+            stream.getTracks().forEach(track => track.stop());
+          };
+          
+          mediaRecorder.start();
+          document.getElementById("start-btn").disabled = true;
+          document.getElementById("stop-btn").disabled = false;
+        } catch (error) {
+          alert('Mikrofon erişimi reddedildi: ' + error.message);
+        }
+      }
+
+      document.getElementById("start-btn").addEventListener("click", startRecording);
+      
+      document.getElementById("stop-btn").addEventListener("click", () => {
+        if (mediaRecorder && mediaRecorder.state === 'recording') {
+          mediaRecorder.stop();
+          document.getElementById("start-btn").disabled = false;
+          document.getElementById("stop-btn").disabled = true;
+        }
+      });
+    </script>
+  </body>
+</html>
