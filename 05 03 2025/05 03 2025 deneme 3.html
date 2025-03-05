@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Konuşma Tanıma</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Konuşma Tanıma</h1>
+            <p>İngilizce konuşun, söyledikleriniz ekrana yazılsın!</p>
+        </header>
+        <main>
+            <div class="buttons">
+                <button id="start-btn">🎤 Konuşmaya Başla</button>
+                <button id="stop-btn" disabled>⏹️ Konuşmayı Durdur</button>
+            </div>
+            <div id="result" class="hidden">
+                <div class="result-box">
+                    <p><strong>Söylenen:</strong> <span id="recognized-text"></span></p>
+                </div>
+            </div>
+            <div id="status" class="status"></div>
+        </main>
+    </div>
+
+    <script>
+        const startBtn = document.getElementById('start-btn');
+        const stopBtn = document.getElementById('stop-btn');
+        const resultDiv = document.getElementById('result');
+        const statusDiv = document.getElementById('status');
+        let mediaRecorder;
+        let audioChunks = [];
+
+        // Mikrofon erişim izni
+        async function initMicrophone() {
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                return stream;
+            } catch (err) {
+                statusDiv.textContent = 'Mikrofon erişim izni reddedildi!';
+                throw err;
+            }
+        }
+
+        // Kaydı başlat
+        async function startRecording() {
+            try {
+                statusDiv.textContent = 'Dinleniyor... Konuşmaya başlayın!';
+                const stream = await initMicrophone();
+                mediaRecorder = new MediaRecorder(stream);
+                
+                mediaRecorder.ondataavailable = (e) => {
+                    audioChunks.push(e.data);
+                };
+
+                mediaRecorder.onstop = async () => {
+                    statusDiv.textContent = 'Ses işleniyor...';
+                    const audioBlob = new Blob(audioChunks, { type: 'audio/wav' });
+                    const formData = new FormData();
+                    formData.append('audio', audioBlob, 'recording.wav');
+
+                    try {
+                        const response = await fetch('/recognize', {
+                         method: 'POST',
+                         body: formData
+                        });
+
+                        if (!response.ok) {
+    const errorData = await response.json();
+    throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
+}
+                        
+                        const data = await response.json();
+                        if(data.error) {
+                            throw new Error(data.error);
+                        }
+                        
+                        document.getElementById('recognized-text').textContent = data.text;
+                        resultDiv.classList.remove('hidden');
+                        statusDiv.textContent = 'Başarıyla tamamlandı!';
+                    } catch (error) {
+                        statusDiv.textContent = `Hata: ${error.message}`;
+                    } finally {
+                        audioChunks = [];
+                        stream.getTracks().forEach(track => track.stop());
+                    }
+                };
+
+                mediaRecorder.start();
+                startBtn.disabled = true;
+                stopBtn.disabled = false;
+            } catch (error) {
+                statusDiv.textContent = `Hata: ${error.message}`;
+            }
+        }
+
+        // Kaydı durdur
+        function stopRecording() {
+            if(mediaRecorder && mediaRecorder.state === 'recording') {
+                mediaRecorder.stop();
+                startBtn.disabled = false;
+                stopBtn.disabled = true;
+            }
+        }
+
+        // Event Listeners
+        startBtn.addEventListener('click', startRecording);
+        stopBtn.addEventListener('click', stopRecording);
+    </script>
+</body>
+</html>
