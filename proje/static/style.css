@@ -1,17 +1,29 @@
+:root {
+  --primary-color: #3498db;
+  --primary-dark-color: #2980b9;
+  --background-color: #f5f5f5;
+  --white-color: #ffffff;
+  --text-color: #333;
+  --secondary-text-color: #7f8c8d;
+  --header-color: #2c3e50;
+  --result-background: #ecf0f1;
+}
+
 body {
   font-family: "Poppins", sans-serif;
-  background: #f5f5f5;
-  color: #333;
+  background: var(--background-color);
+  color: var(--text-color);
   justify-content: center;
   align-items: center;
   height: 100vh;
   margin: 0;
   padding: 20px;
   box-sizing: border-box;
+  display: flex;
 }
 
 .container {
-  background: #ffffff;
+  background: var(--white-color);
   border-radius: 12px;
   padding: 30px;
   max-width: 500px;
@@ -24,12 +36,12 @@ body {
 header h1 {
   font-size: 2rem;
   margin-bottom: 10px;
-  color: #2c3e50;
+  color: var(--header-color);
 }
 
 header p {
   font-size: 1rem;
-  color: #7f8c8d;
+  color: var(--secondary-text-color);
 }
 
 .buttons {
@@ -40,18 +52,18 @@ header p {
 }
 
 button {
-  background: #3498db;
-  color: #fff;
+  background: var(--primary-color);
+  color: var(--white-color);
   border: none;
   padding: 12px 24px;
   font-size: 1rem;
   border-radius: 8px;
   cursor: pointer;
-  transition: background 0.3s ease, transform 0.3s ease;
+  transition: background 0.3s ease-in-out, transform 0.3s ease-in-out;
 }
 
 button:hover {
-  background: #2980b9;
+  background: var(--primary-dark-color);
   transform: translateY(-2px);
 }
 
@@ -61,26 +73,32 @@ button:disabled {
   transform: none;
 }
 
+button:focus {
+  outline: 2px solid var(--primary-dark-color);
+  outline-offset: 2px;
+}
+
 #result {
-  margin-top: 30px;
+  margin-top: 20px;
 }
 
 .result-box {
-  background: #ecf0f1;
+  background: var(--result-background);
   padding: 15px;
   border-radius: 8px;
   margin-bottom: 15px;
   text-align: left;
 }
 
-.result-box p {
-  margin: 0;
-  font-size: 1rem;
-  color: #333;
+.result-box {
+  background: var(--result-background);
+  padding: 15px;
+  border-radius: 8px;
+  text-align: left;
 }
 
 .result-box strong {
-  color: #2c3e50;
+  color: var(--header-color);
 }
 
 .hidden {
@@ -97,7 +115,15 @@ button:disabled {
     padding: 10px 20px;
   }
 
+  .result-box {
+    background: var(--result-background);
+    padding: 15px;
+    border-radius: 8px;
+    text-align: left;
+  }
   .result-box p {
-    font-size: 0.9rem;
+    margin: 5px 0;
+    font-size: 1rem;
+    color: var(--text-color);
   }
 }

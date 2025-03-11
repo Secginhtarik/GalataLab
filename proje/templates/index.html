@@ -24,63 +24,86 @@
           <button id="start-btn">Konuşmaya Başla</button>
           <button id="stop-btn" disabled>Konuşmayı Durdur</button>
         </div>
-        <div id="result" class="hidden">
-          <div class="result-box">
-            <p><strong>Söylenen:</strong> <span id="recognized-text"></span></p>
-            <p><strong>Yanıt:</strong> <span id="response-text"></span></p>
-          </div>
+        <div id="result" class="result-box">
+          <p><strong>Söylenen:</strong> <span id="recognized-text"></span></p>
+          <p><strong>Yanıt:</strong> <span id="response-text"></span></p>
         </div>
-        
+      </main>
+    </div>
 
     <script>
       let isListening = false;
 
+      async function fetchRecognized() {
+        if (!isListening) return;
+
+        try {
+          const response = await fetch("/get_recognized");
+          const data = await response.json();
+          if (data.text || data.response) {
+            document.getElementById("recognized-text").innerText =
+              data.text || "";
+            document.getElementById("response-text").innerText =
+              data.response || "";
+          }
+          // Yeni bir konuşma için tekrar istek at
+          if (isListening) fetchRecognized();
+        } catch (error) {
+          console.error("Hata:", error);
+          // Hata olsa bile dinlemeye devam et
+          if (isListening) fetchRecognized();
+        }
+      }
+
       document
         .getElementById("start-btn")
-        .addEventListener("click", function () {
-          if (!isListening) {
-            isListening = true;
-            document.getElementById("start-btn").disabled = true;
-            document.getElementById("stop-btn").disabled = false;
+        .addEventListener("click", async function () {
+          try {
+            // Mikrofon erişim izni kontrolü
+            const stream = await navigator.mediaDevices.getUserMedia({
+              audio: true,
+            });
 
-            fetch("/recognize", {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-            })
-              .then((response) => response.json())
-              .then((data) => {
-                if (data.error) {
-                  document.getElementById("recognized-text").innerText =
-                    "Hata: " + data.error;
-                  document.getElementById("response-text").innerText = "";
-                } else {
-                  document.getElementById("recognized-text").innerText =
-                    data.text;
-                  document.getElementById("response-text").innerText =
-                    data.response;
-                }
-              })
-              .catch((error) => {
-                console.error("Hata:", error);
-                document.getElementById("recognized-text").innerText =
-                  "Bağlantı hatası!";
-              })
-              .finally(() => {
-                isListening = false;
-                document.getElementById("start-btn").disabled = false;
-                document.getElementById("stop-btn").disabled = true;
-              });
+            const response = await fetch("/recognize", { method: "POST" });
+            const data = await response.json();
+
+            if (data.status === "listening") {
+              document.getElementById("start-btn").disabled = true;
+              document.getElementById("stop-btn").disabled = false;
+              isListening = true;
+
+              // İlk konuşma için veri çekmeyi başlat
+              fetchRecognized();
+            }
+          } catch (error) {
+            console.error("Hata:", error);
+            if (error.name === "NotAllowedError") {
+              alert(
+                "Mikrofon erişim izni verilmedi. Lütfen tarayıcı ayarlarından mikrofon erişimini etkinleştirin."
+              );
+            } else {
+              alert("Dinleme başlatılamadı. Lütfen tekrar deneyin.");
+            }
           }
         });
 
       document
         .getElementById("stop-btn")
-        .addEventListener("click", function () {
-          if (isListening) {
-            console.log("Dinleme durduruldu!");
-            isListening = false;
-            document.getElementById("start-btn").disabled = false;
-            document.getElementById("stop-btn").disabled = true;
+        .addEventListener("click", async function () {
+          try {
+            const response = await fetch("/stop", { method: "POST" });
+            const data = await response.json();
+
+            if (data.status === "stopped") {
+              document.getElementById("start-btn").disabled = false;
+              document.getElementById("stop-btn").disabled = true;
+              isListening = false;
+              document.getElementById("recognized-text").innerText = "";
+              document.getElementById("response-text").innerText = "";
+            }
+          } catch (error) {
+            console.error("Hata:", error);
+            alert("Dinleme durdurulamadı. Lütfen tekrar deneyin.");
           }
         });
     </script>
