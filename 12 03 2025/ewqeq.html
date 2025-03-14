@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Voice Assistant</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}" />
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet" />
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Voice Assistant</h1>
+            <p>Speak in English and get responses!</p>
+        </header>
+        <main>
+            <div class="buttons">
+                <button id="start-btn">🎤 Start Recording</button>
+                <button id="stop-btn" disabled>⏹️ Stop Recording</button>
+            </div>
+            <div id="result" class="hidden">
+                <div class="result-box">
+                    <p><strong>You said:</strong> <span id="recognized-text"></span></p>
+                    <p><strong>Response:</strong> <span id="assistant-response"></span></p>
+                    <audio id="response-audio" controls hidden></audio>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        let mediaRecorder;
+        let audioChunks = [];
+        
+        async function startRecording() {
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                mediaRecorder = new MediaRecorder(stream);
+                
+                mediaRecorder.ondataavailable = event => {
+                    audioChunks.push(event.data);
+                };
+                
+                mediaRecorder.onstop = async () => {
+                    const audioBlob = new Blob(audioChunks, { type: 'audio/wav' });
+                    const formData = new FormData();
+                    formData.append('audio', audioBlob, 'recording.wav');
+                    
+                    try {
+                        const response = await fetch('/recognize', {
+                            method: 'POST',
+                            body: formData
+                        });
+                        
+                        const data = await response.json();
+                        if (data.error) {
+                            alert('Error: ' + data.error);
+                            return;
+                        }
+                        
+                        document.getElementById('recognized-text').textContent = data.text;
+                        document.getElementById('assistant-response').textContent = data.response;
+                        document.getElementById('result').classList.remove('hidden');
+                        
+                        if (data.audio_url) {
+                            const audioElement = document.getElementById('response-audio');
+                            audioElement.src = data.audio_url;
+                            audioElement.hidden = false;
+                        }
+                    } catch (error) {
+                        console.error('Error:', error);
+                    } finally {
+                        audioChunks = [];
+                    }
+                };
+                
+                mediaRecorder.start();
+                document.getElementById('start-btn').disabled = true;
+                document.getElementById('stop-btn').disabled = false;
+                
+            } catch (error) {
+                alert('Microphone access required!');
+            }
+        }
+
+        document.getElementById('start-btn').addEventListener('click', startRecording);
+        
+        document.getElementById('stop-btn').addEventListener('click', () => {
+            if (mediaRecorder && mediaRecorder.state === 'recording') {
+                mediaRecorder.stop();
+                document.getElementById('start-btn').disabled = false;
+                document.getElementById('stop-btn').disabled = true;
+            }
+        });
+    </script>
+</body>
+</html>
